@@ -1,0 +1,14 @@
+{
+  "upstream": "storytold/craft-fonts",
+  "ssh": "git@github.com:storytold/craft-fonts.git",
+  "https": "https://github.com/storytold/craft-fonts.git",
+  "ref": "main",
+  "commit": "3d9ab3a132ed0eff457e424226a435a901da30d3",
+  "strategy": "shallow-fetch-pinned-commit",
+  "note": "PhotoCraft 的 web 构建把字体作为站点根下的独立文件分发（运行时 fetch fonts/manifest.txt），本插件照抄：拉到的字体由 scripts/prepare-fonts.mjs 选进 dist/fonts/ 并生成 manifest。仓库含 16MB 级字体，不入库、按需浅拉。",
+  "fonts": [
+    { "family": "Noto Sans CJK SC", "style": "Regular", "file": "fonts/noto-sans-cjk-sc/NotoSansCJKsc-Regular.otf", "licence": "fonts/noto-sans-cjk-sc/OFL.txt", "sha256": "2c76254f6fc379fddfce0a7e84fb5385bb135d3e399294f6eeb6680d0365b74b", "scripts": "Hans,Hant,Jpan", "licenceOut": "OFL-noto-sans-cjk-sc.txt" },
+    { "family": "Noto Sans Arabic", "style": "Regular", "file": "fonts/noto-sans-arabic/NotoSansArabic.ttf", "licence": "fonts/noto-sans-arabic/OFL.txt", "sha256": "63111b5b2e074dd48cc67692e0a2726d86ee94c1c37fe8598257b7b4e87e869e", "scripts": "Arab", "licenceOut": "OFL-noto-sans-arabic.txt" },
+    { "family": "Noto Sans Thai", "style": "Regular", "file": "fonts/noto-sans-thai/NotoSansThai.ttf", "licence": "fonts/noto-sans-thai/OFL.txt", "sha256": "5a1c559bb539583c8a1fd99d1c5b9491e5e14478c9cd2bd0970d5c3096cc9ef8", "scripts": "Thai", "licenceOut": "OFL-noto-sans-thai.txt" }
+  ]
+}

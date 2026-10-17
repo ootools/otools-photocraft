@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128" role="img" aria-label="PhotoCraft">
+  <defs>
+    <linearGradient id="bg-photocraft" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#22d3ee"/>
+      <stop offset="100%" stop-color="#0e7490"/>
+    </linearGradient>
+  </defs>
+  <rect x="24" y="26" width="80" height="62" rx="10" fill="none" stroke="#fff" stroke-width="7"/>
+  <circle cx="46" cy="48" r="8" fill="#fff"/>
+  <path d="M30 84 L56 58 L74 76 L88 62 L100 74" fill="none" stroke="#fff" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="46" y="94" width="36" height="8" rx="4" fill="#fff"/>
+</svg>

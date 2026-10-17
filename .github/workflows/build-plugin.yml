@@ -1,0 +1,61 @@
+# 构建插件前端（dist/）并上传产物。
+# 触发：push 到 main、PR、手动。
+#
+# 这个模板支持两种构建模式，自动判断（见「探测构建模式」步）：
+#   - web 模式：没有 shell/Cargo.toml 时，直接拷贝 web/ → dist/（不需要 Rust 工具链，CI 很快）。
+#   - rust 模式：存在 shell/Cargo.toml 时，拉上游 + trunk 编译 WASM → dist/（移植 Rust+WASM 软件）。
+# 产物就是 dist/ 这一份静态资源，拷到 otools 主仓库的 plugins/<packid>/dist 即可用。
+name: build-plugin
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: 探测构建模式
+        id: mode
+        shell: bash
+        run: |
+          if [ -f shell/Cargo.toml ]; then echo "mode=rust" >> "$GITHUB_OUTPUT"; else echo "mode=web" >> "$GITHUB_OUTPUT"; fi
+
+      - name: 安装工具链（rust 模式）
+        if: steps.mode.outputs.mode == 'rust'
+        run: |
+          rustup toolchain install stable --profile minimal
+          rustup default stable
+          rustup target add wasm32-unknown-unknown
+
+      - name: 安装 trunk（rust 模式）
+        if: steps.mode.outputs.mode == 'rust'
+        run: cargo install trunk --locked
+
+      - name: 缓存 cargo 与 trunk 工具（rust 模式）
+        if: steps.mode.outputs.mode == 'rust'
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            shell/target
+            ~/.cache/trunk
+          key: plugin-wasm-${{ runner.os }}-${{ hashFiles('shell/Cargo.lock', 'upstream/**/Cargo.lock') }}
+          restore-keys: plugin-wasm-${{ runner.os }}-
+
+      - name: 构建 dist/
+        run: node scripts/build-web.mjs
+
+      - name: 上传产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: plugin-dist
+          path: dist/
+          if-no-files-found: error

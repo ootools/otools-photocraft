@@ -1,0 +1,29 @@
+{
+  "devUrl": "http://127.0.0.1:6488",
+  "developerName": "jry",
+  "displayName": "PhotoCraft",
+  "displayNameCN": "PhotoCraft",
+  "entry": "dist/index.html",
+  "quickDev": true,
+  "hasAd": false,
+  "icon": "🖼️",
+  "inPluginPurchase": false,
+  "key": [
+    "photocraft",
+    "photoshop",
+    "ps",
+    "图片处理",
+    "修图",
+    "位图",
+    "图层",
+    "psd",
+    "图像编辑",
+    "平面设计"
+  ],
+  "openInBrowser": false,
+  "packid": "otools-photocraft",
+  "screenshots": [],
+  "summary": "PhotoCraft（开源、纯 Rust 重写的 Photoshop 式图像编辑器）的 OTools 插件版：图层、选区、画笔、调整与滤镜、文字、矢量形状，以及 PSD/PNG/JPEG/RAW 等格式读写。",
+  "uuid": "otools-photocraft",
+  "version": "0.1.0"
+}

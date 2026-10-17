@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+  <title>PhotoCraft</title>
+  <link data-trunk rel="rust" data-bin="otools-photocraft" data-cargo-profile="wasm-release" data-cargo-features="heif" data-wasm-opt="z" data-wasm-opt-params="--converge" data-weak-refs />
+  <link data-trunk rel="copy-file" href="favicon.svg" />
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+  <style>
+    html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #262626; }
+    #photocraft_canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+    #photocraft_loading { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 0 16px; text-align: center; color: #b8b8b8; font: 14px system-ui, sans-serif; pointer-events: none; }
+  </style>
+  <script>
+    /*
+     * OTools 宿主桥（插件唯一需要写的 JS）。
+     * ------------------------------------------------------------------
+     * 上游 PhotoCraft 的网页版没有文件系统：打开靠浏览器选文件框（`rfd`），
+     * 保存靠浏览器下载，预设库存 IndexedDB。OTools 宿主注入了 `window.otools`，
+     * 提供真正的文件对话框与磁盘读写，所以这里把「选文件 / 读文件 / 另存 / 写文件」
+     * 换成宿主调用；WASM 侧（shell/src/otools.rs）通过 wasm-bindgen 直接调下面几个函数。
+     *
+     * 宿主能力有两条路，任一条通就算「在 OTools 里」：
+     *   1. `window.otools` / `window.utools`：宿主注入的包装 API
+     *      （dialog.open/save + readHostFile/writeHostFile）。
+     *   2. `window.__TAURI_INTERNALS__.invoke`：Tauri 原生 IPC，可直接调
+     *      `tools_webview_pick_files` / `tools_webview_read_file` /
+     *      `tools_webview_pick_save_path` / `tools_webview_write_file`。
+     * 两条路都不通（把 dist 拖进普通浏览器）才退回上游的浏览器下载行为。
+     *
+     * 注意 write_file 的参数形状：`tools_webview_write_file(request: WebviewWriteFileRequest)`
+     * 收的是名为 `request` 的结构体，平铺 `{path, dataBase64}` 会被拒掉。
+     *
+     * 字体（dist/fonts/manifest.txt）由 scripts/prepare-fonts.mjs 在构建期就位，
+     * 上游的 served_fonts 逻辑按原样工作。
+     */
+    (function () {
+      var NAME_MAP_KEY = 'photocraft.otools.paths';
+      var DIAG_KEY = 'photocraft.otools.diag';
+
+      function baseName(p) {
+        var s = String(p || '');
+        var i = Math.max(s.lastIndexOf('/'), s.lastIndexOf('\\'));
+        return i >= 0 ? s.slice(i + 1) : s;
+      }
+
+      // 「文件名 -> 上次真实落盘路径」的映射，让再次保存不再弹对话框。
+      function loadMap() {
+        try { return JSON.parse(window.localStorage.getItem(NAME_MAP_KEY) || '{}') || {}; } catch (e) { return {}; }
+      }
+      function saveMap(map) {
+        try { window.localStorage.setItem(NAME_MAP_KEY, JSON.stringify(map)); } catch (e) { /* 忽略 */ }
+      }
+
+      function diag(patch) {
+        try {
+          var d = JSON.parse(window.localStorage.getItem(DIAG_KEY) || '{}') || {};
+          for (var k in patch) d[k] = patch[k];
+          d.at = new Date().toISOString();
+          window.localStorage.setItem(DIAG_KEY, JSON.stringify(d));
+        } catch (e) { /* 忽略 */ }
+      }
+
+      function fail(message) { return Promise.reject(new Error(message)); }
+
+      function wrapper() {
+        var a = (typeof window !== 'undefined' && (window.otools || window.utools)) || null;
+        return a && a.dialog && typeof a.dialog.open === 'function' && typeof a.readHostFile === 'function' ? a : null;
+      }
+
+      function tauriInvoke() {
+        var candidates = [window];
+        try { if (window.parent && window.parent !== window) candidates.push(window.parent); } catch (e) { /* 跨域，忽略 */ }
+        try { if (window.top && window.top !== window) candidates.push(window.top); } catch (e) { /* 跨域，忽略 */ }
+        for (var i = 0; i < candidates.length; i++) {
+          var t = candidates[i] && candidates[i].__TAURI_INTERNALS__;
+          if (t && typeof t.invoke === 'function') return t.invoke.bind(t);
+        }
+        return null;
+      }
+
+      function hostReady() { return !!wrapper() || !!tauriInvoke(); }
+
+      function readHostFile(path) {
+        var a = wrapper();
+        if (a) return a.readHostFile(path);
+        var invoke = tauriInvoke();
+        if (!invoke) return fail('OTools 宿主不可用');
+        return invoke('tools_webview_read_file', { path: path });
+      }
+
+      function writeHostFile(path, dataBase64) {
+        // Tauri 的 tools_webview_write_file 收的是名为 request 的结构体；平铺会被拒。
+        var invoke = tauriInvoke();
+        if (invoke) {
+          return invoke('tools_webview_write_file', { request: { path: path, dataBase64: dataBase64 } }).catch(function (e) {
+            var a = wrapper();
+            if (a && typeof a.writeHostFile === 'function') return a.writeHostFile({ path: path, dataBase64: dataBase64 });
+            throw e;
+          });
+        }
+        var a = wrapper();
+        if (a && typeof a.writeHostFile === 'function') return a.writeHostFile({ path: path, dataBase64: dataBase64 });
+        return fail('OTools 宿主不可用');
+      }
+
+      /** Rust 传来的 filters 数组（[{name, extensions}]）→ 宿主对话框的 filters。 */
+      function toFilters(filters) {
+        if (!filters || !filters.length) return [];
+        var out = [];
+        for (var i = 0; i < filters.length; i++) {
+          var f = filters[i];
+          if (!f) continue;
+          out.push(typeof f === 'string'
+            ? { name: f, extensions: [f] }
+            : { name: f.name || '文件', extensions: f.extensions || [] });
+        }
+        return out;
+      }
+
+      function firstPath(picked) {
+        if (Array.isArray(picked)) return picked.length ? firstPath(picked[0]) : null;
+        if (picked && typeof picked === 'object' && typeof picked.path === 'string') return picked.path.trim() || null;
+        return typeof picked === 'string' ? (picked.trim() || null) : null;
+      }
+
+      function pickOpenPaths(request) {
+        var req = request || {};
+        var filters = toFilters(req.filters);
+        var options = { multiple: !!req.multiple, title: req.title || '打开文件' };
+        if (filters.length) options.filters = filters;
+        var a = wrapper();
+        if (a) return a.dialog.open(options).then(function (p) { return Array.isArray(p) ? p.map(firstPath).filter(Boolean) : (firstPath(p) ? [firstPath(p)] : []); });
+        var invoke = tauriInvoke();
+        if (!invoke) return fail('OTools 打开文件对话框不可用');
+        return invoke('tools_webview_pick_files', { options: options }).then(function (files) {
+          var list = Array.isArray(files) ? files : (files ? [files] : []);
+          var out = [];
+          for (var i = 0; i < list.length; i++) {
+            var p = firstPath(list[i]);
+            if (p) out.push(p);
+          }
+          return req.multiple ? out : out.slice(0, 1);
+        });
+      }
+
+      function pickSavePath(defaultPath, title) {
+        var a = wrapper();
+        if (a) return a.dialog.save({ title: title || '保存文件', defaultPath: defaultPath }).then(firstPath);
+        var invoke = tauriInvoke();
+        if (!invoke) return fail('OTools 保存对话框不可用');
+        // 宿主的 resolveDialogDirectoryAndName 会把裸文件名误判成目录，所以显式拆成 directory + fileName。
+        var sp = String(defaultPath || '').match(/^(.*[\\/])?([^\\/]+)$/);
+        var options = {
+          title: title || '保存文件',
+          suggestedName: sp ? sp[2] : defaultPath,
+          directory: sp && sp[1] ? sp[1].replace(/[\\/]+$/, '') : undefined,
+        };
+        return invoke('tools_webview_pick_save_path', { options: options }).then(function (meta) {
+          return meta ? (typeof meta === 'string' ? meta : (meta.path || null)) : null;
+        });
+      }
+
+      window.photocraftOtools = {
+        available: function () {
+          var a = wrapper();
+          if (a) { diag({ bridge: 'wrapper', host: true }); return true; }
+          var raw = !!tauriInvoke();
+          if (raw) {
+            diag({ bridge: 'raw', host: true });
+            try { console.warn('[photocraftOtools] window.otools 包装缺失，改用 Tauri IPC 直连 tools_webview_* 命令'); } catch (e) { /* 忽略 */ }
+          } else {
+            diag({ bridge: 'none', host: false });
+          }
+          return raw;
+        },
+
+        theme: function () {
+          if (typeof document === 'undefined') return '';
+          var cl = document.documentElement && document.documentElement.classList;
+          if (!cl) return '';
+          if (cl.contains('dark')) return 'dark';
+          if (cl.contains('light')) return 'light';
+          return '';
+        },
+
+        // 宿主界面语言（BCP 47，如 zh-CN）。OTools 在插件 webview 里注入
+        // `window.__OTOOLS_LOCALE__` 并同步 `document.documentElement.lang`。
+        language: function () {
+          try {
+            var l =
+              (window.__OTOOLS_LOCALE__ && window.__OTOOLS_LOCALE__.locale) ||
+              (document.documentElement && document.documentElement.lang) ||
+              (typeof navigator !== 'undefined' && navigator.language) ||
+              '';
+            return l || '';
+          } catch (e) { return ''; }
+        },
+
+        /**
+         * 打开文件：弹宿主的打开对话框，读取选中的文件（File ▸ Open 可多选）。
+         * @param {{title?: string, filters?: Array<{name: string, extensions: string[]}>, multiple?: boolean}} request
+         * @returns {Promise<Array<{name: string, path: string, dataBase64: string}>>}
+         */
+        openFiles: function (request) {
+          if (!hostReady()) return fail('OTools 打开文件对话框不可用');
+          return pickOpenPaths(request).then(function (paths) {
+            var out = [];
+            var jobs = paths.map(function (path) {
+              return readHostFile(path).then(function (file) {
+                out.push({ name: (file && file.name) || baseName(path), path: path, dataBase64: (file && file.dataBase64) || '' });
+              });
+            });
+            return Promise.all(jobs).then(function () {
+              if (out.length) diag({ lastOpen: out[0].path });
+              return out;
+            });
+          });
+        },
+
+        /**
+         * 只选保存路径（File ▸ Save As）：不写文件，路径交给应用自己去写。
+         * @param {{name: string}} request
+         * @returns {Promise<{path: string}|null>}
+         */
+        pickSavePath: function (request) {
+          var req = request || {};
+          var name = String(req.name || 'Untitled.pcraft');
+          if (!hostReady()) return fail('OTools 保存对话框不可用');
+          return pickSavePath(name, '保存文件').then(function (path) { return path ? { path: path } : null; });
+        },
+
+        /**
+         * 保存文件。首次弹另存对话框，之后同名文件直接覆盖（可 forcePick 强制弹）。
+         * @param {{name: string, dataBase64: string, forcePick?: boolean}} request
+         * @returns {Promise<{path: string}|null>}
+         */
+        saveFile: function (request) {
+          var req = request || {};
+          var name = String(req.name || 'Untitled.pcraft');
+          if (!hostReady()) return fail('OTools 保存对话框不可用');
+
+          var map = loadMap();
+          var known = map[name];
+          if (!req.forcePick && known) {
+            return writeHostFile(known, req.dataBase64).then(function () {
+              diag({ lastSave: known, lastSaveMode: 'overwrite' });
+              return { path: known };
+            });
+          }
+          return pickSavePath(known || name, '保存文件').then(function (path) {
+            if (!path) return null;
+            map[name] = path;
+            saveMap(map);
+            return writeHostFile(path, req.dataBase64).then(function () {
+              diag({ lastSave: path, lastSaveMode: 'dialog' });
+              return { path: path };
+            });
+          });
+        }
+      };
+    })();
+  </script>
+</head>
+<body>
+  <canvas id="photocraft_canvas"></canvas>
+  <div id="photocraft_loading">
+    <p>Loading PhotoCraft&hellip;</p>
+  </div>
+</body>
+</html>

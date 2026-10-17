@@ -1,0 +1,150 @@
+# PhotoCraft 的 OTools 插件外壳。
+#
+# 这一层是我们自己的代码：它把上游 `apps/photocraft-web` 的浏览器外壳换成
+# 「OTools 插件外壳」——UI 仍然是上游的 `photocraft-ui-egui`（原封不动），
+# 唯一的区别是文件从哪来、存到哪去（见 `src/otools.rs`）。
+#
+# 上游源码在 `../upstream`（按 upstream.pin 的 commit 浅拉取，保持原样勿改），
+# 所以本 crate 用 path 依赖直接复用上游的 crate，不复制、不改动任何上游源码。
+[package]
+name = "otools-photocraft-shell"
+description = "PhotoCraft as an OTools plugin: the upstream egui UI compiled to WebAssembly, with OTools host file I/O"
+version = "0.1.0"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+publish = false
+
+# 独立的 workspace：上游 `upstream/` 有自己的 workspace，本 crate 不能并进去
+# （它是 wasm-only 的，并进去会让宿主的 `cargo build` 也去编译 eframe/wgpu）。
+[workspace]
+
+[[bin]]
+name = "otools-photocraft"
+path = "src/main.rs"
+
+[features]
+# 打开 HEIC/HEIF 照片（上游可选 crate；官方构建默认开）
+default = ["heif"]
+heif = ["photocraft-heif"]
+
+[dependencies]
+photocraft-engine = { path = "../upstream/crates/engine" }
+photocraft-io = { path = "../upstream/crates/io" }
+photocraft-codecs = { path = "../upstream/crates/codecs" }
+photocraft-doc = { path = "../upstream/crates/doc" }
+photocraft-ui-egui = { path = "../upstream/crates/ui-egui" }
+photocraft-heif = { path = "../upstream/crates/heif", optional = true }
+egui = { version = "0.36", default-features = false }
+log = { version = "0.4", default-features = false }
+# 只在「不在 OTools 里」（把 dist 拖进普通浏览器）时用它弹浏览器选文件框；插件内不走。
+rfd = "0.17"
+
+# 只在 wasm 下需要的依赖（宿主/桌面下本 crate 什么都不做）。
+# 上游网页版用 rfd 弹浏览器选文件框，插件版走宿主对话框
+# （`src/otools.rs`），所以这里不引 rfd。
+[target."cfg(target_arch = \"wasm32\")".dependencies]
+# `wgpu` 拉 egui-wgpu 的默认特性：WebGPU + WebGL2 兜底。
+eframe = { version = "0.36", default-features = false, features = ["wgpu", "accesskit"] }
+base64 = "0.22"
+wasm-bindgen = "0.2"
+wasm-bindgen-futures = "0.4"
+js-sys = "0.3"
+
+[target."cfg(target_arch = \"wasm32\")".dependencies.web-sys]
+version = "0.3"
+features = [
+  "AbortController",
+  "AbortSignal",
+  "BeforeUnloadEvent",
+  "Blob",
+  "BlobPropertyBag",
+  "CssStyleDeclaration",
+  "Document",
+  "DomException",
+  "Element",
+  "Event",
+  "EventTarget",
+  "HtmlAnchorElement",
+  "HtmlCanvasElement",
+  "HtmlElement",
+  "IdbCursor",
+  "IdbCursorWithValue",
+  "IdbDatabase",
+  "IdbFactory",
+  "IdbObjectStore",
+  "IdbOpenDbRequest",
+  "IdbRequest",
+  "IdbTransaction",
+  "IdbTransactionMode",
+  "Location",
+  "MediaQueryList",
+  "MouseEvent",
+  "Navigator",
+  "PointerEvent",
+  "RequestInit",
+  "Response",
+  "Storage",
+  "Url",
+  "UrlSearchParams",
+  "Window",
+]
+
+# 复刻上游 workspace 的 wasm-release profile（体积优先；上游用它把 wasm 压在 24 MiB 内）。
+# shell/index.html 用 data-cargo-profile="wasm-release" 选它。
+[profile.wasm-release]
+inherits = "release"
+opt-level = "z"
+lto = "fat"
+codegen-units = 1
+strip = "debuginfo"
+
+[profile.wasm-release.package."*"]
+opt-level = "s"
+
+# 解码与光栅化保持速度。
+[profile.wasm-release.package.photocraft-codecs]
+opt-level = "s"
+[profile.wasm-release.package.photocraft-raw]
+opt-level = "s"
+[profile.wasm-release.package.photocraft-heif]
+opt-level = "s"
+[profile.wasm-release.package.photocraft-vector]
+opt-level = "s"
+
+# 大块且不在每帧/每像素路径上的 crate：文档模型、解析器、JSON、SVG、着色器翻译。
+[profile.wasm-release.package.photocraft-doc]
+opt-level = "z"
+[profile.wasm-release.package.photocraft-psd]
+opt-level = "z"
+[profile.wasm-release.package.photocraft-format]
+opt-level = "z"
+[profile.wasm-release.package.photocraft-affinity]
+opt-level = "z"
+[profile.wasm-release.package.serde_json]
+opt-level = "z"
+[profile.wasm-release.package.usvg]
+opt-level = "z"
+[profile.wasm-release.package.naga]
+opt-level = "z"
+
+# 浏览器 UI 工具箱同样偏体积。
+[profile.wasm-release.package.egui]
+opt-level = "z"
+[profile.wasm-release.package.epaint]
+opt-level = "z"
+[profile.wasm-release.package.eframe]
+opt-level = "z"
+
+# 像素处理保持速度；色彩管理建一次就缓存，compose 走 GPU，algo 是最后手段。
+[profile.wasm-release.package.photocraft-raster]
+opt-level = 3
+[profile.wasm-release.package.photocraft-color]
+opt-level = 3
+[profile.wasm-release.package.photocraft-cms]
+opt-level = "z"
+[profile.wasm-release.package.photocraft-compose]
+opt-level = "z"
+[profile.wasm-release.package.photocraft-algo]
+opt-level = "z"
+[profile.wasm-release.package.photocraft-paint]
+opt-level = 3
