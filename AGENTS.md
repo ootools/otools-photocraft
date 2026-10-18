@@ -83,6 +83,9 @@
 （表现为「设了语言却永远不生效」）。只在偏好还是 `auto` 时生效，
 所以用户手动选过的语言不会被动。
 
+已知限制：只在插件启动时跟一次。运行中把 OTools 的界面语言切换了，插件要关掉重开才会跟上
+（egui 空闲时不跑帧，没法轮询；而 trunk 生成的是 ES module，JS 事件也不好回调到 wasm）。
+
 验证：`node scripts/probe-host-bridge.mjs` 会断言存储的 `interface.language` 等于假宿主的
 locale（每次运行用新的 Chrome profile，避免上一次存的值遮盖回归）。
 
