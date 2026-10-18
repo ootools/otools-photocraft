@@ -59,6 +59,9 @@ extern "C" {
 thread_local! {
     /// 缓存 egui Context，供异步任务完成后触发重绘。
     static REPAINT: RefCell<Option<egui::Context>> = const { RefCell::new(None) };
+    /// 上一次由 `follow_host_language` 写进偏好的宿主语言；用来区分
+    /// 「跟随宿主」与「用户手动选过」（详见该函数的文档）。
+    static LAST_LANG: RefCell<String> = const { RefCell::new(String::new()) };
 }
 
 /// 宿主是否可用（不在 OTools 里时退回上游的浏览器行为：下载文件）。
@@ -84,24 +87,34 @@ pub fn install(ctx: egui::Context) {
     REPAINT.with(|slot| *slot.borrow_mut() = Some(ctx));
 }
 
-/// 首帧跟随宿主界面语言（在 `prefs_ui::load` 之后调用，否则会被存储的偏好覆盖掉）。
+/// 跟随宿主界面语言（在 `prefs_ui::load` 之后调用，否则会被存储的偏好覆盖掉）。
 ///
 /// 上游网页版的 i18n 在 wasm 下读不到系统语言偏好（`i18n::system::detect_system_tags()`
 /// 直接返回空向量），于是 `interface.language = auto` 恒解析成英文。宿主把界面语言注入
-/// `window.__OTOOLS_LOCALE__`，这里在首帧把它写进偏好——**只在偏好还是 `auto` 时**，
-/// 所以用户在「偏好 ▸ 界面语言」里手动选过语言之后不会被覆盖。
+/// `window.__OTOOLS_LOCALE__`，这里把它写进偏好。
+///
+/// **每帧都能调**（由 `web.rs` 按帧号节流）：宿主语言改了就跟着改，不用重开插件。
+/// 上游 `i18n::set_current` 每帧都从偏好读一次（`ui-egui/src/lib.rs`），所以改完就是下一帧生效。
+///
+/// 怎么区分「跟随宿主」与「用户手动选过」：偏好还等于我上次写进去的那个值（或者还是 `auto`），
+/// 就说明仍在跟随模式；否则就是用户在「偏好 ▸ 界面语言」里手动选过，不再覆盖。
+/// 缓存还有一个作用：避免每帧 `edit_prefs`（它会落 localStorage）。
 pub fn follow_host_language(app: &mut photocraft_engine::Session) {
-    if !app.prefs().interface.language.trim().eq_ignore_ascii_case("auto") {
-        return;
-    }
     let tag = host_language();
     let tag = tag.trim();
     if tag.is_empty() {
         return;
     }
+    let current = app.prefs().interface.language.trim().to_string();
+    let last = LAST_LANG.with(|slot| slot.borrow().clone());
+    let following = current.eq_ignore_ascii_case("auto") || current.eq_ignore_ascii_case(&last);
+    if !following || current.eq_ignore_ascii_case(tag) {
+        return;
+    }
     app.edit_prefs(|prefs| {
         prefs.interface.language = tag.to_string();
     });
+    LAST_LANG.with(|slot| *slot.borrow_mut() = tag.to_string());
 }
 
 /// OTools 的界面语言（BCP 47）。

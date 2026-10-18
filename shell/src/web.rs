@@ -108,7 +108,7 @@ pub fn start() {
                     }
                     let unsaved = Arc::new(AtomicBool::new(false));
                     guard_unload(unsaved.clone());
-                    Ok(Box::new(WebShell { app, inbox, unsaved, served, database, presets, lang_synced: false }))
+                    Ok(Box::new(WebShell { app, inbox, unsaved, served, database, presets, lang_polled_at: f64::NEG_INFINITY }))
                 }),
             )
             .await;
@@ -233,8 +233,8 @@ async fn fetch_bytes(url: &str, integrity: Option<&str>) -> Result<Vec<u8>, Stri
 /// so the app's own drop path can't handle them) and feed them through the inbox.
 struct WebShell {
     app: PhotocraftApp,
-    /// 宿主界面语言只跟一次（在 `prefs_ui::load` 之后）。
-    lang_synced: bool,
+    /// 上一次轮询宿主界面语言的 `egui` 时间戳（秒）。
+    lang_polled_at: f64,
     inbox: Inbox,
     /// Read by the `beforeunload` listener ([`guard_unload`]).
     unsaved: Arc<AtomicBool>,
@@ -314,9 +314,15 @@ impl eframe::App for WebShell {
         }
         self.serve_fonts(ctx);
         // 宿主界面语言必须在这之后跟：`prefs_ui::load` 在首帧 `app.logic` 里读 localStorage，
-        // 构造时写会被它覆盖掉（只在偏好还是 auto 时生效，手动选过语言不会被动）。
-        if !self.lang_synced {
-            self.lang_synced = true;
+        // 构造时写会被它覆盖掉。之后每秒轮询一次：运行中改 OTools 的界面语言，
+        // 插件下一秒就跟着变，不用重开。手动选过语言不会被覆盖
+        // （见 `otools::follow_host_language` 的文档）。
+        // 轮询得让 egui 一直跑帧，而 egui 空闲时会自己停下（实测启动约 180 帧后就静止）。
+        // 这里每秒讨一次帧：开销是一帧每秒，可忽略；有交互时 egui 自己会要帧，不受影响。
+        ctx.request_repaint_after(std::time::Duration::from_millis(900));
+        let now = ctx.input(|i| i.time);
+        if now - self.lang_polled_at >= 1.0 {
+            self.lang_polled_at = now;
             crate::otools::follow_host_language(&mut self.app.session);
         }
         self.app.logic(ctx, frame);

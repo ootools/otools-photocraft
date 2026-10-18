@@ -71,23 +71,29 @@
 | `shell/patches/*.patch` | 对 `upstream/` 的本地裁剪 |
 | `upstream/` | （不在 git 里）上游源码，都是 path 依赖直接复用 |
 
-### 界面语言：首帧跟随宿主（上游网页版在 wasm 下恒英文）
+### 界面语言：每秒轮询宿主（上游网页版在 wasm 下恒英文）
 
 上游 `i18n::system::detect_system_tags()` 在 wasm 下直接返回空向量，因此
 `interface.language = auto` 恒解析成英文——浏览器里读不到系统语言偏好。
-插件版在 `WebShell::logic` 的首帧把宿主语言（`window.__OTOOLS_LOCALE__.locale`）
-写进`interface.language`，见 `crate::otools::follow_host_language`。
+插件版在 `WebShell::logic` 里把宿主语言（`window.__OTOOLS_LOCALE__.locale`）
+写进 `interface.language`，见 `crate::otools::follow_host_language`。
 
 **必须在首帧做，不能在构造时做**：`prefs_ui::load` 在首帧
 `app.logic` 里读 localStorage 并调用 `load_prefs_json`，构造时写的值会被它覆盖掉
 （表现为「设了语言却永远不生效」）。只在偏好还是 `auto` 时生效，
 所以用户手动选过的语言不会被动。
 
-已知限制：只在插件启动时跟一次。运行中把 OTools 的界面语言切换了，插件要关掉重开才会跟上
-（egui 空闲时不跑帧，没法轮询；而 trunk 生成的是 ES module，JS 事件也不好回调到 wasm）。
+**运行中也会跟**：`logic` 里 `ctx.request_repaint_after(900ms)` 让 egui 空闲时也保持约一帧秒（开销可忽），
+然后每秒轮询一次宿主语言；上游 `i18n::set_current` 每帧都从偏好读语言，所以改完下一帧就生效。
+上一版的反例：更早的实现是「首帧跟一次」（`lang_synced: bool`），运行中切换语言必须重开插件。
+原因是 egui 空闲时真的不跑帧——实测启动约 180 帧后就静止，轮询根本拥不到机会。
 
-验证：`node scripts/probe-host-bridge.mjs` 会断言存储的 `interface.language` 等于假宿主的
-locale（每次运行用新的 Chrome profile，避免上一次存的值遮盖回归）。
+验证：
+- `node scripts/probe-host-bridge.mjs` 断言存储的 `interface.language` 等于假宿主的 locale
+  （每次运行用新的 Chrome profile，避免上一次存的值遮盖回归）。
+- `node scripts/probe-language.mjs` 驱动三段：启动跟随、运行中切换语言、手动选过不被覆盖。
+  第二段除了断言落盘的偏好，还用 canvas 把菜单栏那一条（400x30）的像素拉出来对比——
+  免得「偏好写进去了但画面没重绘」被误判成通过。
 
 ### `shell/src/web.rs` 相对上游改了两处
 

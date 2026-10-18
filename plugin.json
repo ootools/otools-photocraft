@@ -25,5 +25,5 @@
   "screenshots": [],
   "summary": "PhotoCraft（开源、纯 Rust 重写的 Photoshop 式图像编辑器）的 OTools 插件版：图层、选区、画笔、调整与滤镜、文字、矢量形状，以及 PSD/PNG/JPEG/RAW 等格式读写。",
   "uuid": "otools-photocraft",
-  "version": "0.1.1"
+  "version": "0.1.2"
 }
