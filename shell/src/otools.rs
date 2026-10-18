@@ -36,6 +36,10 @@ extern "C" {
     #[wasm_bindgen(js_namespace = photocraftOtools, js_name = "available")]
     fn host_available() -> bool;
 
+    /// 宿主界面语言（BCP 47，如 `zh-CN`）。
+    #[wasm_bindgen(js_namespace = photocraftOtools, js_name = "language")]
+    fn host_language_raw() -> String;
+
     #[wasm_bindgen(js_namespace = photocraftOtools, js_name = "theme")]
     fn host_theme() -> String;
 
@@ -78,6 +82,31 @@ pub(crate) fn repaint() {
 /// 装上重绘句柄（启动时调用一次）。
 pub fn install(ctx: egui::Context) {
     REPAINT.with(|slot| *slot.borrow_mut() = Some(ctx));
+}
+
+/// 首帧跟随宿主界面语言（在 `prefs_ui::load` 之后调用，否则会被存储的偏好覆盖掉）。
+///
+/// 上游网页版的 i18n 在 wasm 下读不到系统语言偏好（`i18n::system::detect_system_tags()`
+/// 直接返回空向量），于是 `interface.language = auto` 恒解析成英文。宿主把界面语言注入
+/// `window.__OTOOLS_LOCALE__`，这里在首帧把它写进偏好——**只在偏好还是 `auto` 时**，
+/// 所以用户在「偏好 ▸ 界面语言」里手动选过语言之后不会被覆盖。
+pub fn follow_host_language(app: &mut photocraft_engine::Session) {
+    if !app.prefs().interface.language.trim().eq_ignore_ascii_case("auto") {
+        return;
+    }
+    let tag = host_language();
+    let tag = tag.trim();
+    if tag.is_empty() {
+        return;
+    }
+    app.edit_prefs(|prefs| {
+        prefs.interface.language = tag.to_string();
+    });
+}
+
+/// OTools 的界面语言（BCP 47）。
+pub fn host_language() -> String {
+    host_language_raw()
 }
 
 /// 社区/外部链接（Discord、ArtCraft 官网、上游 GitHub）：插件里点击不再跳出。

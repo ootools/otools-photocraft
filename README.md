@@ -68,6 +68,12 @@ otools-photocraft/
 按 crate 分级），`shell/Cargo.toml` 原样复刻，`shell/index.html` 用
 `data-cargo-profile="wasm-release"` 选它。产物是一个 ~20MB 级的 `.wasm`。
 
+### 4. 界面语言（跟随宿主，21 种语言）
+
+上游网页版在 wasm 下读不到系统语言偏奾（`interface.language = auto` 恒为英文）。
+插件版在首帧把 OTools 的界面语言写进偏好，中文界面就是简体中文。
+在「偏好 ▸ 界面语言」里手动选过语言之后不会被覆盖。
+
 ### 4. 其他
 
 - **HEIC/HEIF**：`heif` 特性默认开启（官方构建同样默认开）。

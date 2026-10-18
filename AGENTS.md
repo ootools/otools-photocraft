@@ -71,6 +71,21 @@
 | `shell/patches/*.patch` | 对 `upstream/` 的本地裁剪 |
 | `upstream/` | （不在 git 里）上游源码，都是 path 依赖直接复用 |
 
+### 界面语言：首帧跟随宿主（上游网页版在 wasm 下恒英文）
+
+上游 `i18n::system::detect_system_tags()` 在 wasm 下直接返回空向量，因此
+`interface.language = auto` 恒解析成英文——浏览器里读不到系统语言偏好。
+插件版在 `WebShell::logic` 的首帧把宿主语言（`window.__OTOOLS_LOCALE__.locale`）
+写进`interface.language`，见 `crate::otools::follow_host_language`。
+
+**必须在首帧做，不能在构造时做**：`prefs_ui::load` 在首帧
+`app.logic` 里读 localStorage 并调用 `load_prefs_json`，构造时写的值会被它覆盖掉
+（表现为「设了语言却永远不生效」）。只在偏好还是 `auto` 时生效，
+所以用户手动选过的语言不会被动。
+
+验证：`node scripts/probe-host-bridge.mjs` 会断言存储的 `interface.language` 等于假宿主的
+locale（每次运行用新的 Chrome profile，避免上一次存的值遮盖回归）。
+
 ### `shell/src/web.rs` 相对上游改了两处
 
 1. `services()` 的 `file_dialog` / `write` 在 OTools 里走宿主桥

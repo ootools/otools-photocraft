@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
@@ -13,6 +13,13 @@
     #photocraft_loading { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
       padding: 0 16px; text-align: center; color: #b8b8b8; font: 14px system-ui, sans-serif; pointer-events: none; }
   </style>
+  <script>
+    /* 文档语言跟随宿主（在宿主注入 __OTOOLS_LOCALE__ 之后才跑，见下方 addScriptToEvaluateOnNewDocument 之外的首个脚本）。 */
+    try {
+      var l = window.__OTOOLS_LOCALE__ && window.__OTOOLS_LOCALE__.locale;
+      if (l) document.documentElement.lang = l;
+    } catch (e) { /* 忽略 */ }
+  </script>
   <script>
     /*
      * OTools 宿主桥（插件唯一需要写的 JS）。

@@ -108,7 +108,7 @@ pub fn start() {
                     }
                     let unsaved = Arc::new(AtomicBool::new(false));
                     guard_unload(unsaved.clone());
-                    Ok(Box::new(WebShell { app, inbox, unsaved, served, database, presets }))
+                    Ok(Box::new(WebShell { app, inbox, unsaved, served, database, presets, lang_synced: false }))
                 }),
             )
             .await;
@@ -233,6 +233,8 @@ async fn fetch_bytes(url: &str, integrity: Option<&str>) -> Result<Vec<u8>, Stri
 /// so the app's own drop path can't handle them) and feed them through the inbox.
 struct WebShell {
     app: PhotocraftApp,
+    /// 宿主界面语言只跟一次（在 `prefs_ui::load` 之后）。
+    lang_synced: bool,
     inbox: Inbox,
     /// Read by the `beforeunload` listener ([`guard_unload`]).
     unsaved: Arc<AtomicBool>,
@@ -311,6 +313,12 @@ impl eframe::App for WebShell {
             });
         }
         self.serve_fonts(ctx);
+        // 宿主界面语言必须在这之后跟：`prefs_ui::load` 在首帧 `app.logic` 里读 localStorage，
+        // 构造时写会被它覆盖掉（只在偏好还是 auto 时生效，手动选过语言不会被动）。
+        if !self.lang_synced {
+            self.lang_synced = true;
+            crate::otools::follow_host_language(&mut self.app.session);
+        }
         self.app.logic(ctx, frame);
         self.save_presets(ctx);
         // 让插件更纯粹：吞掉所有社区/外部链接（Discord、ArtCraft 官网、上游 GitHub），
