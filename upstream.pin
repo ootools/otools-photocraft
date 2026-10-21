@@ -3,7 +3,7 @@
   "ssh": "git@github.com:storytold/photocraft.git",
   "https": "https://github.com/storytold/photocraft.git",
   "ref": "main",
-  "commit": "5f65579ecb44047c2a619036c18ff273202e1389",
+  "commit": "46e538b3a2bacb533e89c7a30a99bbf2d91c3381",
   "strategy": "shallow-fetch-pinned-commit",
   "note": "上游代码不入库。改这个 commit 并跑 node scripts/fetch-upstream.mjs 即可同步；务必用完整 SHA，保证可复现。"
 }
