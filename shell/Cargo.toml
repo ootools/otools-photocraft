@@ -83,6 +83,7 @@ features = [
   "Navigator",
   "PointerEvent",
   "RequestInit",
+  "RequestMode",
   "Response",
   "Storage",
   "Url",

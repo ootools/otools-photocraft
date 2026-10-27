@@ -84,6 +84,50 @@ otools-photocraft/
 - **社区外链**：`web.rs` 的 `logic()` 吞掉所有 `OpenUrl`（Discord、ArtCraft 官网、
   上游 GitHub），点击不再跳出插件。
 
+## MCP
+
+插件通过宿主的 **headless MCP 后端**暴露上游 `photocraft-automation` 的 25 个工具
+（`session_list` / `doc_open` / `doc_save` / `doc_render_preview` / `command_run` / `ui_*` …）。
+
+与 designcraft / pdfcraft 的差别：上游工具表由 `rmcp` 的 `#[tool_router]` 宏生成，
+**没有独立导出**。因此 `native/` 不复制工具定义，而是在 dylib 内起一个**常驻**的上游
+MCP 服务，经 `tokio::io::duplex` 内存管道与它对话：
+
+- `plugin.json` 声明 `mcp.backend = "headless"` + `native.enabled = true`；
+- **`annotations` 不写**：上游 rmcp 已经把 `readOnlyHint` / `destructiveHint` 编译进
+  工具表，manifest 写注解会覆盖上游的权威语义；
+- 上游的 `strict_schema` 参数校验、后台作业（`jobs_list` / `jobs_cancel`）、
+  长任务进度都跟着上游走，零漂移；
+- 会话常驻，`doc_open → doc_inspect → doc_save` 落在同一个会话上；
+- 单次调用超时 600s，取工具表 60s。
+
+数据流见 `native/src/service.rs`。`plugin_manifest_expose_matches_upstream_tools`
+测试断言 `plugin.json` 的 `mcp.expose` 与上游工具表一致。
+
+### resources
+
+上游除 tools 外还提供 **MCP resources**，插件原样转发：
+
+| URI | 上游 name | 内容 |
+| --- | --- | --- |
+| `photocraft://document` | `document` | 当前文档的 `doc_inspect` 状态（无会话时为空） |
+| `photocraft://commands` | `commands` | 命令目录（含 enabled 状态） |
+
+宿主 ABI 的三个 method：`__otools_mcp_resources__`（→ `{resources:[…]}`）、
+`__otools_mcp_resource_templates__`（→ `{resourceTemplates:[…]}`）、
+`__otools_mcp_read_resource__`（`{uri}` → `{contents:[{uri,mimeType,text|blob}]}`）。
+读失败以 `ok:false` 表达（resources 没有 `isError` 信封）。
+
+⚠️ 上游实现藏在 `upstream/crates/automation/src/server/conventions.rs`（子目录）。
+查上游能力时只 grep `upstream/crates/*/src/*.rs` 会漏掉它，从而误判「上游没有 resources」。
+
+本地冒烟（按宿主的方式 dlopen 并真调工具 + 列举/读取资源）：
+
+```bash
+cargo build --release --manifest-path native/Cargo.toml
+node scripts/smoke-mcp.mjs ..          # 参数是各 craft 仓库的共同父目录
+```
+
 ## 上游版本
 
 打包所用的上游提交。`upstream.pin` 是唯一真源，这张表用来回溯「哪个插件版本打的是哪份上游代码」，
@@ -91,6 +135,7 @@ otools-photocraft/
 
 | 插件版本 | 上游标签 | 上游提交 | 打包日期 |
 | --- | --- | --- | --- |
+| 0.2.1 | v0.16.0 | `b1794c6e0608ccfc887213dcf58398977c5cb75e` | 2026-10-27 |
 | 0.1.3 | v0.11.1 | `46e538b3a2bacb533e89c7a30a99bbf2d91c3381` | 2026-10-21 |
 | 0.1.2 | main（快照） | `5f65579ecb44047c2a619036c18ff273202e1389` | 2026-10-18 |
 

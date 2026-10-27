@@ -879,13 +879,21 @@ version = "0.1.0"
 source = "git+https://github.com/storytold/craft-libs?rev=82a24b006eefa036b43c09a67fb9a3fbd17ffe63#82a24b006eefa036b43c09a67fb9a3fbd17ffe63"
 
 [[package]]
+name = "craft-jpeg"
+version = "0.1.0"
+source = "git+https://github.com/storytold/craft-libs?rev=6e7f28518dd1cb57e1624bdc269c3c14316b13ae#6e7f28518dd1cb57e1624bdc269c3c14316b13ae"
+dependencies = [
+ "thiserror 2.0.21",
+]
+
+[[package]]
 name = "craft-print"
 version = "0.1.0"
 source = "git+https://github.com/storytold/craft-libs?rev=3d37da389a3618ab9b76109da11416e9ca4ea719#3d37da389a3618ab9b76109da11416e9ca4ea719"
 dependencies = [
  "craft-winprint-gdi",
  "miniz_oxide 0.8.9",
- "roxmltree",
+ "roxmltree 0.20.0",
  "tempfile",
  "winprint",
  "winsafe",
@@ -1506,7 +1514,7 @@ version = "0.5.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bbc773e24e02d4ddd8395fd30dc147524273a83e54e0f312d986ea30de5f5646"
 dependencies = [
- "roxmltree",
+ "roxmltree 0.20.0",
 ]
 
 [[package]]
@@ -1531,9 +1539,17 @@ dependencies = [
  "hashbrown 0.17.1",
  "linebender_resource_handle",
  "memmap2",
+ "objc2 0.6.5",
+ "objc2-core-foundation",
+ "objc2-core-text",
+ "objc2-foundation 0.3.2",
  "parlance",
  "read-fonts",
+ "roxmltree 0.21.2",
  "smallvec",
+ "windows",
+ "windows-core",
+ "yeslogic-fontconfig-sys",
 ]
 
 [[package]]
@@ -2974,6 +2990,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "objc2-core-text"
+version = "0.3.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0cde0dfb48d25d2b4862161a4d5fcc0e3c24367869ad306b0c9ec0073bfed92d"
+dependencies = [
+ "bitflags 2.13.2",
+ "objc2-core-foundation",
+]
+
+[[package]]
 name = "objc2-encode"
 version = "4.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3358,7 +3384,7 @@ dependencies = [
 
 [[package]]
 name = "photocraft-affinity"
-version = "0.11.1"
+version = "0.16.0"
 dependencies = [
  "crc32fast",
  "flate2",
@@ -3367,7 +3393,7 @@ dependencies = [
 
 [[package]]
 name = "photocraft-algo"
-version = "0.11.1"
+version = "0.16.0"
 dependencies = [
  "photocraft-color",
  "photocraft-geom",
@@ -3379,15 +3405,16 @@ dependencies = [
 
 [[package]]
 name = "photocraft-cms"
-version = "0.11.1"
+version = "0.16.0"
 dependencies = [
  "rayon",
 ]
 
 [[package]]
 name = "photocraft-codecs"
-version = "0.11.1"
+version = "0.16.0"
 dependencies = [
+ "craft-jpeg",
  "exr",
  "flate2",
  "half",
@@ -3405,7 +3432,7 @@ dependencies = [
 
 [[package]]
 name = "photocraft-color"
-version = "0.11.1"
+version = "0.16.0"
 dependencies = [
  "photocraft-cms",
  "serde",
@@ -3413,7 +3440,7 @@ dependencies = [
 
 [[package]]
 name = "photocraft-compose"
-version = "0.11.1"
+version = "0.16.0"
 dependencies = [
  "photocraft-color",
  "photocraft-doc",
@@ -3425,7 +3452,7 @@ dependencies = [
 
 [[package]]
 name = "photocraft-doc"
-version = "0.11.1"
+version = "0.16.0"
 dependencies = [
  "photocraft-color",
  "photocraft-geom",
@@ -3436,9 +3463,10 @@ dependencies = [
 
 [[package]]
 name = "photocraft-engine"
-version = "0.11.1"
+version = "0.16.0"
 dependencies = [
  "blake3",
+ "chrono",
  "craft-print",
  "flate2",
  "photocraft-algo",
@@ -3459,17 +3487,19 @@ dependencies = [
  "photocraft-text",
  "photocraft-vector",
  "rayon",
- "roxmltree",
+ "roxmltree 0.21.2",
  "same-file",
+ "semver",
  "serde",
  "serde_json",
  "tempfile",
  "thiserror 2.0.21",
+ "winsafe",
 ]
 
 [[package]]
 name = "photocraft-format"
-version = "0.11.1"
+version = "0.16.0"
 dependencies = [
  "blake3",
  "crc32fast",
@@ -3491,14 +3521,14 @@ dependencies = [
 
 [[package]]
 name = "photocraft-geom"
-version = "0.11.1"
+version = "0.16.0"
 dependencies = [
  "serde",
 ]
 
 [[package]]
 name = "photocraft-gpu"
-version = "0.11.1"
+version = "0.16.0"
 dependencies = [
  "half",
  "log",
@@ -3513,14 +3543,14 @@ dependencies = [
 
 [[package]]
 name = "photocraft-heif"
-version = "0.11.1"
+version = "0.16.0"
 dependencies = [
  "heic-rs",
 ]
 
 [[package]]
 name = "photocraft-io"
-version = "0.11.1"
+version = "0.16.0"
 dependencies = [
  "blake3",
  "craft-docpath",
@@ -3541,25 +3571,25 @@ dependencies = [
  "photocraft-text",
  "photocraft-vector",
  "resvg",
- "roxmltree",
+ "roxmltree 0.21.2",
  "serde_json",
  "thiserror 2.0.21",
 ]
 
 [[package]]
 name = "photocraft-ipp"
-version = "0.11.1"
+version = "0.16.0"
 
 [[package]]
 name = "photocraft-ops"
-version = "0.11.1"
+version = "0.16.0"
 dependencies = [
  "photocraft-doc",
 ]
 
 [[package]]
 name = "photocraft-paint"
-version = "0.11.1"
+version = "0.16.0"
 dependencies = [
  "photocraft-color",
  "photocraft-geom",
@@ -3569,12 +3599,13 @@ dependencies = [
 
 [[package]]
 name = "photocraft-plugins"
-version = "0.11.1"
+version = "0.16.0"
 dependencies = [
  "photocraft-color",
  "photocraft-geom",
  "photocraft-raster",
  "rayon",
+ "rustix 1.1.5",
  "serde",
  "serde_json",
  "thiserror 2.0.21",
@@ -3583,7 +3614,7 @@ dependencies = [
 
 [[package]]
 name = "photocraft-psd"
-version = "0.11.1"
+version = "0.16.0"
 dependencies = [
  "flate2",
  "thiserror 2.0.21",
@@ -3591,7 +3622,7 @@ dependencies = [
 
 [[package]]
 name = "photocraft-raster"
-version = "0.11.1"
+version = "0.16.0"
 dependencies = [
  "photocraft-color",
  "photocraft-geom",
@@ -3601,7 +3632,7 @@ dependencies = [
 
 [[package]]
 name = "photocraft-raw"
-version = "0.11.1"
+version = "0.16.0"
 dependencies = [
  "flate2",
  "jxl-oxide",
@@ -3612,7 +3643,7 @@ dependencies = [
 
 [[package]]
 name = "photocraft-text"
-version = "0.11.1"
+version = "0.16.0"
 dependencies = [
  "flate2",
  "parley",
@@ -3627,7 +3658,7 @@ dependencies = [
 
 [[package]]
 name = "photocraft-ui-egui"
-version = "0.11.1"
+version = "0.16.0"
 dependencies = [
  "base64 0.22.1",
  "craft-print",
@@ -3665,7 +3696,7 @@ dependencies = [
 
 [[package]]
 name = "photocraft-vector"
-version = "0.11.1"
+version = "0.16.0"
 dependencies = [
  "photocraft-color",
  "photocraft-doc",
@@ -4260,6 +4291,15 @@ name = "roxmltree"
 version = "0.20.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6c20b6793b5c2fa6553b250154b78d6d0db37e72700ae35fad9387a46f487c97"
+
+[[package]]
+name = "roxmltree"
+version = "0.21.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9da7f59328b09405b181fee1018925fad50f157afb43c0c0f5c522c256dd5907"
+dependencies = [
+ "memchr",
+]
 
 [[package]]
 name = "rustc-hash"
@@ -5603,7 +5643,7 @@ dependencies = [
  "kurbo 0.11.3",
  "log",
  "pico-args",
- "roxmltree",
+ "roxmltree 0.20.0",
  "rustybuzz",
  "simplecss",
  "siphasher",
@@ -6588,6 +6628,17 @@ name = "xmlwriter"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ec7a2a501ed189703dba8b08142f057e887dfc4b2cc4db2d343ac6376ba3e0b9"
+
+[[package]]
+name = "yeslogic-fontconfig-sys"
+version = "6.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1d8b8abf912b9a29ff112e1671c97c33636903d13a69712037190e6805af4f76"
+dependencies = [
+ "dlib",
+ "once_cell",
+ "pkg-config",
+]
 
 [[package]]
 name = "yoke"
