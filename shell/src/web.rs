@@ -11,7 +11,7 @@ use std::cell::Cell;
 use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, PoisonError};
 
 use photocraft_codecs::{ChannelLayout, EncodeOptions, Image};
 use photocraft_doc::Document;
@@ -87,6 +87,7 @@ pub fn start() {
                 canvas,
                 options,
                 Box::new(move |cc| {
+                    PhotocraftApp::install_type_reset_hooks(&cc.egui_ctx);
                     PhotocraftApp::setup_context(&cc.egui_ctx, ThemeKind::Pro);
                     let inbox: Inbox = Arc::default();
                     let place_inbox: Inbox = Arc::default();
@@ -114,7 +115,7 @@ pub fn start() {
                     }
                     let unsaved = Arc::new(AtomicBool::new(false));
                     guard_unload(unsaved.clone());
-                    Ok(Box::new(WebShell { app, inbox, place_inbox, unsaved, served, database, presets, lang_polled_at: f64::NEG_INFINITY }))
+                    Ok(Box::new(WebShell { app, inbox, place_inbox, unsaved, served, database, presets, lang_polled_at: f64::NEG_INFINITY, ui_language: "" }))
                 }),
             )
             .await;
@@ -230,12 +231,15 @@ fn load_font_manifest(served: Served, ctx: egui::Context) {
             files.entry(f.family.clone()).or_default().push((f.file.clone(), f.integrity.clone()));
         }
         log::info!("photocraft-web: {} served font families", files.len());
-        served.lock().unwrap_or_else(|e| e.into_inner()).files = files;
+        served.lock().unwrap_or_else(PoisonError::into_inner).files = files;
         // The families for the font menus, and the script fallbacks (the manifest's `scripts`).
         served_fonts::add_fonts(&fonts);
         // Fetch now the fallbacks of the scripts the browser's languages use (an Arabic reader gets
         // the Arabic font before typing); the rest is fetched when text or a font menu needs it.
-        served_fonts::request_for_languages(browser_languages().iter().map(String::as_str));
+        // Also the interface language's: `serve_fonts` asked for it once already, maybe before
+        // this manifest arrived, when no fallback was registered yet.
+        let ui_language = photocraft_ui_egui::i18n::current().code();
+        served_fonts::request_for_languages(browser_languages().iter().map(String::as_str).chain([ui_language]));
         ctx.request_repaint();
     });
 }
@@ -283,6 +287,8 @@ struct WebShell {
     served: Served,
     database: Option<web_sys::IdbDatabase>,
     presets: crate::preset_bridge::Bridge,
+    /// The interface language whose served script font was last asked for.
+    ui_language: &'static str,
 }
 
 impl WebShell {
@@ -307,9 +313,15 @@ impl WebShell {
     /// Fetches the served families asked for (picked in a font menu, or needed by a layout) and
     /// installs the files that arrived.
     fn serve_fonts(&mut self, ctx: &egui::Context) {
+        // The interface language's script font draws its labels (Arabic, Japanese…).
+        let ui_language = photocraft_ui_egui::i18n::current().code();
+        if ui_language != self.ui_language {
+            self.ui_language = ui_language;
+            served_fonts::request_for_languages([ui_language]);
+        }
         let requested = served_fonts::take_requests();
         let (fetch, arrived) = {
-            let mut s = self.served.lock().unwrap_or_else(|e| e.into_inner());
+            let mut s = self.served.lock().unwrap_or_else(PoisonError::into_inner);
             let mut fetch = Vec::new();
             for family in requested {
                 if let Some(files) = s.files.get(&family).cloned()
@@ -326,14 +338,14 @@ impl WebShell {
             wasm_bindgen_futures::spawn_local(async move {
                 match fetch_bytes(&file, integrity.as_deref()).await {
                     Ok(bytes) => {
-                        served.lock().unwrap_or_else(|e| e.into_inner()).arrived.push((family, bytes));
+                        served.lock().unwrap_or_else(PoisonError::into_inner).arrived.push((family, bytes));
                         ctx.request_repaint();
                     }
                     Err(e) => log::error!("couldn't fetch served font {file}: {e}"),
                 }
             });
         }
-        served_fonts::install(&mut self.app, arrived);
+        served_fonts::install(&mut self.app, ctx, arrived);
     }
 }
 
@@ -342,6 +354,10 @@ impl eframe::App for WebShell {
         // A tap reaches eframe as Pointer Events and Touch Events: keep one press per tap, or the
         // twin press closes the menu the first one opened (#2095).
         photocraft_ui_egui::touch_twins::drop_twins(ctx, raw_input);
+        // The browser build has no TCP control server, so `inject_synthetic` finds an empty
+        // queue, but the clipboard key mapping (`Event::PasteImage`), legacy pinch, pen-hold and
+        // titlebar normalization live in the app hook and must run here too.
+        eframe::App::raw_input_hook(&mut self.app, ctx, raw_input);
     }
 
     fn logic(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
@@ -361,7 +377,7 @@ impl eframe::App for WebShell {
                     match f.bytes_async().await {
                         Ok(bytes) => {
                             let queue = if place { &place_inbox } else { &inbox };
-                            queue.lock().unwrap_or_else(|e| e.into_inner()).push((name, bytes));
+                            queue.lock().unwrap_or_else(PoisonError::into_inner).push((name, bytes));
                             ctx.request_repaint();
                         }
                         Err(e) => log::error!("couldn't read dropped file {name}: {e}"),
@@ -393,8 +409,9 @@ impl eframe::App for WebShell {
                 log::error!("couldn't open delivered {}: {e}", file.name);
             }
         }
-        self.app.logic(ctx, frame);
+        self.app.logic_frame(ctx, frame);
         self.save_presets(ctx);
+        self.app.finish_type_reset_logic(ctx);
         // 让插件更纯粹：吞掉所有社区/外部链接（Discord、ArtCraft 官网、上游 GitHub），
         // 点击不再跳出插件。文档内普通链接不受影响。
         ctx.output_mut(|o| {
@@ -429,8 +446,9 @@ impl eframe::App for WebShell {
                 });
             });
         }
-        self.app.ui(ui, frame);
+        self.app.ui_frame(ui, frame);
         self.save_presets(ui.ctx());
+        self.app.finish_type_reset_pass(ui.ctx());
     }
 }
 

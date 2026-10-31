@@ -135,6 +135,7 @@ node scripts/smoke-mcp.mjs ..          # 参数是各 craft 仓库的共同父�
 
 | 插件版本 | 上游标签 | 上游提交 | 打包日期 |
 | --- | --- | --- | --- |
+| 0.2.2 | v0.18.0+ | `422ca7beda90d927643bcd074646ebbd37706d75` | 2026-10-31 |
 | 0.2.1 | v0.16.0 | `b1794c6e0608ccfc887213dcf58398977c5cb75e` | 2026-10-27 |
 | 0.1.3 | v0.11.1 | `46e538b3a2bacb533e89c7a30a99bbf2d91c3381` | 2026-10-21 |
 | 0.1.2 | main（快照） | `5f65579ecb44047c2a619036c18ff273202e1389` | 2026-10-18 |
@@ -146,7 +147,7 @@ unset RUSTC_WRAPPER                 # 它会把 cargo 指向旧 rustc
 node scripts/build-web.mjs          # 拉上游 → 拉字体 → trunk build --release → dist/
 ```
 
-需要 rustc ≥ 1.95 与 wasm32-unknown-unknown 目标（egui 0.36 的要求）。
+需要 rustc ≥ 1.95 与 wasm32-unknown-unknown 目标（egui 0.37 的要求）。
 trunk 首次运行会下载 wasm-bindgen-cli 与 wasm-opt（GitHub release），国内网络可能要直连。
 
 ## 本地验证

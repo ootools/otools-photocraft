@@ -34,7 +34,7 @@ photocraft-codecs = { path = "../upstream/crates/codecs" }
 photocraft-doc = { path = "../upstream/crates/doc" }
 photocraft-ui-egui = { path = "../upstream/crates/ui-egui" }
 photocraft-heif = { path = "../upstream/crates/heif", optional = true }
-egui = { version = "0.36", default-features = false }
+egui = { version = "0.37", default-features = false }
 log = { version = "0.4", default-features = false }
 # 只在「不在 OTools 里」（把 dist 拖进普通浏览器）时用它弹浏览器选文件框；插件内不走。
 rfd = "0.17"
@@ -44,7 +44,7 @@ rfd = "0.17"
 # （`src/otools.rs`），所以这里不引 rfd。
 [target."cfg(target_arch = \"wasm32\")".dependencies]
 # `wgpu` 拉 egui-wgpu 的默认特性：WebGPU + WebGL2 兜底。
-eframe = { version = "0.36", default-features = false, features = ["wgpu", "accesskit"] }
+eframe = { version = "0.37", default-features = false, features = ["wgpu", "accesskit"] }
 base64 = "0.22"
 wasm-bindgen = "0.2"
 wasm-bindgen-futures = "0.4"
@@ -150,3 +150,23 @@ opt-level = "z"
 opt-level = "z"
 [profile.wasm-release.package.photocraft-paint]
 opt-level = 3
+# 上游 workspace 里的 `[patch.crates-io]` **不会**跟着 path 依赖带过来：补丁只在
+# 发起构建的那个 workspace 根节点生效。0.18 起上游把整个 egui 家族与 winit 钉在
+# storytold 的审查 commit 上——本 crate 是独立 workspace，不抄就会解析到 crates.io
+# 的 egui，与上游期望的 API 对不上。原样复制即可，上游更新后要同步。
+[patch.crates-io]
+ecolor = { git = "https://github.com/storytold/egui.git", rev = "6d518fc799681571963842f95b55a6b68431b15a" }
+emath = { git = "https://github.com/storytold/egui.git", rev = "6d518fc799681571963842f95b55a6b68431b15a" }
+epaint = { git = "https://github.com/storytold/egui.git", rev = "6d518fc799681571963842f95b55a6b68431b15a" }
+epaint_default_fonts = { git = "https://github.com/storytold/egui.git", rev = "6d518fc799681571963842f95b55a6b68431b15a" }
+egui = { git = "https://github.com/storytold/egui.git", rev = "6d518fc799681571963842f95b55a6b68431b15a" }
+egui-winit = { git = "https://github.com/storytold/egui.git", rev = "6d518fc799681571963842f95b55a6b68431b15a" }
+egui-wgpu = { git = "https://github.com/storytold/egui.git", rev = "6d518fc799681571963842f95b55a6b68431b15a" }
+egui_glow = { git = "https://github.com/storytold/egui.git", rev = "6d518fc799681571963842f95b55a6b68431b15a" }
+egui_extras = { git = "https://github.com/storytold/egui.git", rev = "6d518fc799681571963842f95b55a6b68431b15a" }
+egui_kittest = { git = "https://github.com/storytold/egui.git", rev = "6d518fc799681571963842f95b55a6b68431b15a" }
+egui_system_font_provider = { git = "https://github.com/storytold/egui.git", rev = "6d518fc799681571963842f95b55a6b68431b15a" }
+eframe = { git = "https://github.com/storytold/egui.git", rev = "6d518fc799681571963842f95b55a6b68431b15a" }
+egui_demo_lib = { git = "https://github.com/storytold/egui.git", rev = "6d518fc799681571963842f95b55a6b68431b15a" }
+egui_inspection = { git = "https://github.com/storytold/egui.git", rev = "6d518fc799681571963842f95b55a6b68431b15a" }
+winit = { git = "https://github.com/storytold/winit.git", rev = "a517b3846ee8457d84ee4975110bfda6797c44dc" }
