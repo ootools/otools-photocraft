@@ -382,6 +382,17 @@ impl eframe::App for WebShell {
             self.lang_polled_at = now;
             crate::otools::follow_host_language(&mut self.app.session);
         }
+        // 宿主投递的「打开方式」：系统里双击已绑定扩展名的图片 → 用本插件打开。
+        // 有路径的走 `open_file`（文档绑定到该文件，保存直接覆盖），没有的走 `open_bytes`。
+        for file in crate::otools::drain_delivered() {
+            let opened = match file.path {
+                Some(path) => self.app.open_file(&path, &file.bytes),
+                None => self.app.open_bytes(&file.name, &file.bytes),
+            };
+            if let Err(e) = opened {
+                log::error!("couldn't open delivered {}: {e}", file.name);
+            }
+        }
         self.app.logic(ctx, frame);
         self.save_presets(ctx);
         // 让插件更纯粹：吞掉所有社区/外部链接（Discord、ArtCraft 官网、上游 GitHub），

@@ -54,6 +54,39 @@ extern "C" {
     /// `{name}` → `{path}` 或 `null`（用户取消）：只选路径，不写文件。
     #[wasm_bindgen(js_namespace = photocraftOtools, js_name = "pickSavePath")]
     fn host_pick_save_path(request: JsValue) -> js_sys::Promise;
+
+    /// 宿主投递的「打开方式」：JS 侧已把文件读成字节攒好，这里一次取走。
+    #[wasm_bindgen(js_namespace = photocraftOtools, js_name = "takeDelivered")]
+    fn take_delivered_raw() -> js_sys::Array;
+}
+
+/// 宿主投递来的一份文件（JS 侧已读成字节）。
+pub struct Delivered {
+    pub name: String,
+    /// 真实落盘路径：给了它，文档会绑定到这个文件（「保存」直接覆盖，不再弹另存）。
+    pub path: Option<String>,
+    pub bytes: Vec<u8>,
+}
+
+/// 取走宿主投递的文件（每帧调一次，取空即无事）。
+///
+/// 方向与保存相反：宿主在系统里双击已绑定扩展名的图片 → 投递队列 → 本函数取走 →
+/// 上游 `PhotocraftApp::open_file`（保路径）/ `open_bytes`。
+pub fn drain_delivered() -> Vec<Delivered> {
+    let mut out = Vec::new();
+    for item in take_delivered_raw().iter() {
+        if !item.is_object() {
+            continue;
+        }
+        let name = field(&item, "name").unwrap_or_else(|| "untitled.png".to_string());
+        let path = field(&item, "path").filter(|p| !p.trim().is_empty());
+        let data = field(&item, "dataBase64").unwrap_or_default();
+        match base64::engine::general_purpose::STANDARD.decode(data) {
+            Ok(bytes) => out.push(Delivered { name, path, bytes }),
+            Err(e) => log::error!("delivered file {name} is not valid base64: {e}"),
+        }
+    }
+    out
 }
 
 thread_local! {
