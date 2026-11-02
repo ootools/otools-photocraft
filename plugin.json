@@ -64,6 +64,7 @@
       "doc_open",
       "doc_place",
       "doc_render_preview",
+      "doc_replace_smart_object",
       "doc_save",
       "doc_select",
       "jobs_cancel",
