@@ -490,12 +490,12 @@ dependencies = [
 [[package]]
 name = "craft-docpath"
 version = "0.1.0"
-source = "git+https://github.com/storytold/craft-libs?rev=82a24b006eefa036b43c09a67fb9a3fbd17ffe63#82a24b006eefa036b43c09a67fb9a3fbd17ffe63"
+source = "git+https://github.com/storytold/craft-libs?rev=c5a1cbfb5f9049f9270955caffb5bee5997aebf7#c5a1cbfb5f9049f9270955caffb5bee5997aebf7"
 
 [[package]]
 name = "craft-jpeg"
 version = "0.1.0"
-source = "git+https://github.com/storytold/craft-libs?rev=6e7f28518dd1cb57e1624bdc269c3c14316b13ae#6e7f28518dd1cb57e1624bdc269c3c14316b13ae"
+source = "git+https://github.com/storytold/craft-libs?rev=c5a1cbfb5f9049f9270955caffb5bee5997aebf7#c5a1cbfb5f9049f9270955caffb5bee5997aebf7"
 dependencies = [
  "thiserror",
 ]
@@ -503,11 +503,12 @@ dependencies = [
 [[package]]
 name = "craft-print"
 version = "0.1.0"
-source = "git+https://github.com/storytold/craft-libs?rev=3d37da389a3618ab9b76109da11416e9ca4ea719#3d37da389a3618ab9b76109da11416e9ca4ea719"
+source = "git+https://github.com/storytold/craft-libs?rev=c5a1cbfb5f9049f9270955caffb5bee5997aebf7#c5a1cbfb5f9049f9270955caffb5bee5997aebf7"
 dependencies = [
  "craft-winprint-gdi",
- "miniz_oxide 0.8.9",
- "roxmltree 0.20.0",
+ "log",
+ "miniz_oxide 0.9.1",
+ "roxmltree 0.21.2",
  "tempfile",
  "winprint",
  "winsafe",
@@ -2103,7 +2104,7 @@ checksum = "9b4f627cb1b25917193a259e49bdad08f671f8d9708acfd5fe0a8c1455d87220"
 
 [[package]]
 name = "photocraft-affinity"
-version = "0.16.0"
+version = "0.18.0"
 dependencies = [
  "crc32fast",
  "flate2",
@@ -2112,7 +2113,7 @@ dependencies = [
 
 [[package]]
 name = "photocraft-algo"
-version = "0.16.0"
+version = "0.18.0"
 dependencies = [
  "photocraft-color",
  "photocraft-geom",
@@ -2124,9 +2125,9 @@ dependencies = [
 
 [[package]]
 name = "photocraft-automation"
-version = "0.16.0"
+version = "0.18.0"
 dependencies = [
- "base64 0.22.1",
+ "base64 0.23.1",
  "cap-std",
  "clap",
  "getrandom 0.3.4",
@@ -2136,6 +2137,7 @@ dependencies = [
  "photocraft-engine",
  "photocraft-format",
  "photocraft-io",
+ "photocraft-raster",
  "rmcp",
  "schemars",
  "serde",
@@ -2146,14 +2148,14 @@ dependencies = [
 
 [[package]]
 name = "photocraft-cms"
-version = "0.16.0"
+version = "0.18.0"
 dependencies = [
  "rayon",
 ]
 
 [[package]]
 name = "photocraft-codecs"
-version = "0.16.0"
+version = "0.18.0"
 dependencies = [
  "craft-jpeg",
  "exr",
@@ -2169,11 +2171,12 @@ dependencies = [
  "tiff",
  "zune-core 0.5.3",
  "zune-jpeg 0.5.15",
+ "zune-jpegxl",
 ]
 
 [[package]]
 name = "photocraft-color"
-version = "0.16.0"
+version = "0.18.0"
 dependencies = [
  "photocraft-cms",
  "serde",
@@ -2181,7 +2184,7 @@ dependencies = [
 
 [[package]]
 name = "photocraft-compose"
-version = "0.16.0"
+version = "0.18.0"
 dependencies = [
  "photocraft-color",
  "photocraft-doc",
@@ -2193,7 +2196,7 @@ dependencies = [
 
 [[package]]
 name = "photocraft-doc"
-version = "0.16.0"
+version = "0.18.0"
 dependencies = [
  "photocraft-color",
  "photocraft-geom",
@@ -2204,7 +2207,7 @@ dependencies = [
 
 [[package]]
 name = "photocraft-engine"
-version = "0.16.0"
+version = "0.18.0"
 dependencies = [
  "blake3",
  "chrono",
@@ -2240,7 +2243,7 @@ dependencies = [
 
 [[package]]
 name = "photocraft-format"
-version = "0.16.0"
+version = "0.18.0"
 dependencies = [
  "blake3",
  "crc32fast",
@@ -2262,14 +2265,14 @@ dependencies = [
 
 [[package]]
 name = "photocraft-geom"
-version = "0.16.0"
+version = "0.18.0"
 dependencies = [
  "serde",
 ]
 
 [[package]]
 name = "photocraft-io"
-version = "0.16.0"
+version = "0.18.0"
 dependencies = [
  "blake3",
  "craft-docpath",
@@ -2297,28 +2300,30 @@ dependencies = [
 
 [[package]]
 name = "photocraft-ipp"
-version = "0.16.0"
+version = "0.18.0"
 
 [[package]]
 name = "photocraft-ops"
-version = "0.16.0"
+version = "0.18.0"
 dependencies = [
  "photocraft-doc",
 ]
 
 [[package]]
 name = "photocraft-paint"
-version = "0.16.0"
+version = "0.18.0"
 dependencies = [
  "photocraft-color",
  "photocraft-geom",
  "photocraft-raster",
+ "rayon",
+ "rustc-hash",
  "serde",
 ]
 
 [[package]]
 name = "photocraft-plugins"
-version = "0.16.0"
+version = "0.18.0"
 dependencies = [
  "photocraft-color",
  "photocraft-geom",
@@ -2333,7 +2338,7 @@ dependencies = [
 
 [[package]]
 name = "photocraft-psd"
-version = "0.16.0"
+version = "0.18.0"
 dependencies = [
  "flate2",
  "thiserror",
@@ -2341,7 +2346,7 @@ dependencies = [
 
 [[package]]
 name = "photocraft-raster"
-version = "0.16.0"
+version = "0.18.0"
 dependencies = [
  "photocraft-color",
  "photocraft-geom",
@@ -2351,7 +2356,7 @@ dependencies = [
 
 [[package]]
 name = "photocraft-raw"
-version = "0.16.0"
+version = "0.18.0"
 dependencies = [
  "flate2",
  "jxl-oxide",
@@ -2362,7 +2367,7 @@ dependencies = [
 
 [[package]]
 name = "photocraft-text"
-version = "0.16.0"
+version = "0.18.0"
 dependencies = [
  "flate2",
  "parley",
@@ -2377,7 +2382,7 @@ dependencies = [
 
 [[package]]
 name = "photocraft-vector"
-version = "0.16.0"
+version = "0.18.0"
 dependencies = [
  "photocraft-color",
  "photocraft-doc",
@@ -4801,6 +4806,15 @@ name = "zune-jpeg"
 version = "0.5.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "27bc9d5b815bc103f142aa054f561d9187d191692ec7c2d1e2b4737f8dbd7296"
+dependencies = [
+ "zune-core 0.5.3",
+]
+
+[[package]]
+name = "zune-jpegxl"
+version = "0.5.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cba11ecd07cc23351500e840ae03841b7e4997923ec8e4832ee3ae199ea0b6b4"
 dependencies = [
  "zune-core 0.5.3",
 ]
