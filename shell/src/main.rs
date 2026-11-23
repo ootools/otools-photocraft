@@ -13,6 +13,9 @@
 //! 字体（`dist/fonts/manifest.txt` + 字体文件）由 `scripts/prepare-fonts.mjs` 在构建期就位，
 //! 上游的 served_fonts 逻辑原样工作。
 
+#[cfg(any(target_arch = "wasm32", test))]
+mod diagnostics;
+
 #[cfg(target_arch = "wasm32")]
 mod download;
 #[cfg(target_arch = "wasm32")]
