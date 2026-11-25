@@ -117,3 +117,7 @@
   补丁没打上时构建报的是「上游没有 xx 符号」这种隔层错误）。
 - 不要在本仓库跑 `cargo build` 而不管 target：外壳是 wasm-only 的，
   宿主（x86_64）下 `main()` 只会打印一行提示，别把它当编译报错。
+## 上游同步时的 WASM 构建配置
+
+- `shell/Cargo.toml` 的 `[profile.wasm-release]` 及 package overrides 也要与上游同步。0.23.1 已改为 `lto = "thin"`、`codegen-units = 16`；上游实测 fat LTO 链接约占 21GB，thin LTO 约 8GB。旧配置在 ubuntu runner 上两次于最终 shell 编译阶段被 SIGTERM（143）终止。
+- 解码器等包已抽到 craft-libs，优化配置键使用 `craft-image-codecs` / `craft-heif` / `craft-psd` / `craft-affinity` / `craft-cms`，不能沿用已不存在的 photocraft 包名。

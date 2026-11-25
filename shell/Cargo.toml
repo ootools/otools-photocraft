@@ -101,22 +101,23 @@ features = [
 
 # 复刻上游 workspace 的 wasm-release profile（体积优先；上游用它把 wasm 压在 24 MiB 内）。
 # shell/index.html 用 data-cargo-profile="wasm-release" 选它。
+# 对齐上游 0.23.1：thin LTO + 16 units 将链接内存从约 21GB 降到约 8GB。
 [profile.wasm-release]
 inherits = "release"
 opt-level = "z"
-lto = "fat"
-codegen-units = 1
+lto = "thin"
+codegen-units = 16
 strip = "debuginfo"
 
 [profile.wasm-release.package."*"]
 opt-level = "s"
 
 # 解码与光栅化保持速度。
-[profile.wasm-release.package.photocraft-codecs]
+[profile.wasm-release.package.craft-image-codecs]
 opt-level = "s"
 [profile.wasm-release.package.photocraft-raw]
 opt-level = "s"
-[profile.wasm-release.package.photocraft-heif]
+[profile.wasm-release.package.craft-heif]
 opt-level = "s"
 [profile.wasm-release.package.photocraft-vector]
 opt-level = "s"
@@ -124,11 +125,11 @@ opt-level = "s"
 # 大块且不在每帧/每像素路径上的 crate：文档模型、解析器、JSON、SVG、着色器翻译。
 [profile.wasm-release.package.photocraft-doc]
 opt-level = "z"
-[profile.wasm-release.package.photocraft-psd]
+[profile.wasm-release.package.craft-psd]
 opt-level = "z"
 [profile.wasm-release.package.photocraft-format]
 opt-level = "z"
-[profile.wasm-release.package.photocraft-affinity]
+[profile.wasm-release.package.craft-affinity]
 opt-level = "z"
 [profile.wasm-release.package.serde_json]
 opt-level = "z"
@@ -150,7 +151,7 @@ opt-level = "z"
 opt-level = 3
 [profile.wasm-release.package.photocraft-color]
 opt-level = 3
-[profile.wasm-release.package.photocraft-cms]
+[profile.wasm-release.package.craft-cms]
 opt-level = "z"
 [profile.wasm-release.package.photocraft-compose]
 opt-level = "z"
