@@ -32,35 +32,31 @@ tokio = { version = "1", features = ["rt-multi-thread", "io-util", "sync", "macr
 # 上游 workspace 的 patch 不会跟着 path 依赖传播：native 的依赖图经 photocraft-automation
 # 拉进 hayro/vello 系，必须与 shell 同步这段（上游更新后同步，见 AGENTS.md）。
 [patch.crates-io]
-krilla = { git = "https://github.com/storytold/craft-libs", rev = "8d436f486a2e890930ffdf10b602935feb492c97" }
-hayro = { git = "https://github.com/storytold/craft-libs", rev = "8d436f486a2e890930ffdf10b602935feb492c97" }
-hayro-interpret = { git = "https://github.com/storytold/craft-libs", rev = "8d436f486a2e890930ffdf10b602935feb492c97" }
-hayro-syntax = { git = "https://github.com/storytold/craft-libs", rev = "8d436f486a2e890930ffdf10b602935feb492c97" }
-hayro-jbig2 = { git = "https://github.com/storytold/craft-libs", rev = "8d436f486a2e890930ffdf10b602935feb492c97" }
-hayro-cmap = { git = "https://github.com/storytold/craft-libs", rev = "8d436f486a2e890930ffdf10b602935feb492c97" }
-hayro-postscript = { git = "https://github.com/storytold/craft-libs", rev = "8d436f486a2e890930ffdf10b602935feb492c97" }
-linesweeper = { git = "https://github.com/storytold/craft-libs", rev = "8d436f486a2e890930ffdf10b602935feb492c97" }
-vello_common = { git = "https://github.com/storytold/craft-libs", rev = "8d436f486a2e890930ffdf10b602935feb492c97" }
-vello_cpu = { git = "https://github.com/storytold/craft-libs", rev = "8d436f486a2e890930ffdf10b602935feb492c97" }
-ecolor = { git = "https://github.com/storytold/egui.git", rev = "f5025284445ea19c35f746d96fc0b75468b3f560" }
-emath = { git = "https://github.com/storytold/egui.git", rev = "f5025284445ea19c35f746d96fc0b75468b3f560" }
-epaint = { git = "https://github.com/storytold/egui.git", rev = "f5025284445ea19c35f746d96fc0b75468b3f560" }
-epaint_default_fonts = { git = "https://github.com/storytold/egui.git", rev = "f5025284445ea19c35f746d96fc0b75468b3f560" }
-egui = { git = "https://github.com/storytold/egui.git", rev = "f5025284445ea19c35f746d96fc0b75468b3f560" }
-egui-winit = { git = "https://github.com/storytold/egui.git", rev = "f5025284445ea19c35f746d96fc0b75468b3f560" }
-egui-wgpu = { git = "https://github.com/storytold/egui.git", rev = "f5025284445ea19c35f746d96fc0b75468b3f560" }
-egui_glow = { git = "https://github.com/storytold/egui.git", rev = "f5025284445ea19c35f746d96fc0b75468b3f560" }
-egui_extras = { git = "https://github.com/storytold/egui.git", rev = "f5025284445ea19c35f746d96fc0b75468b3f560" }
-egui_kittest = { git = "https://github.com/storytold/egui.git", rev = "f5025284445ea19c35f746d96fc0b75468b3f560" }
-egui_system_font_provider = { git = "https://github.com/storytold/egui.git", rev = "f5025284445ea19c35f746d96fc0b75468b3f560" }
-eframe = { git = "https://github.com/storytold/egui.git", rev = "f5025284445ea19c35f746d96fc0b75468b3f560" }
-egui_demo_lib = { git = "https://github.com/storytold/egui.git", rev = "f5025284445ea19c35f746d96fc0b75468b3f560" }
-egui_inspection = { git = "https://github.com/storytold/egui.git", rev = "f5025284445ea19c35f746d96fc0b75468b3f560" }
+krilla = { git = "https://github.com/storytold/craft-libs", rev = "3656e8aaa41cba15ec5d11b7c77045cb72dec163" }
+hayro = { git = "https://github.com/storytold/craft-libs", rev = "3656e8aaa41cba15ec5d11b7c77045cb72dec163" }
+hayro-interpret = { git = "https://github.com/storytold/craft-libs", rev = "3656e8aaa41cba15ec5d11b7c77045cb72dec163" }
+hayro-syntax = { git = "https://github.com/storytold/craft-libs", rev = "3656e8aaa41cba15ec5d11b7c77045cb72dec163" }
+hayro-jbig2 = { git = "https://github.com/storytold/craft-libs", rev = "3656e8aaa41cba15ec5d11b7c77045cb72dec163" }
+hayro-cmap = { git = "https://github.com/storytold/craft-libs", rev = "3656e8aaa41cba15ec5d11b7c77045cb72dec163" }
+hayro-postscript = { git = "https://github.com/storytold/craft-libs", rev = "3656e8aaa41cba15ec5d11b7c77045cb72dec163" }
+linesweeper = { git = "https://github.com/storytold/craft-libs", rev = "3656e8aaa41cba15ec5d11b7c77045cb72dec163" }
+vello_common = { git = "https://github.com/storytold/craft-libs", rev = "3656e8aaa41cba15ec5d11b7c77045cb72dec163" }
+vello_cpu = { git = "https://github.com/storytold/craft-libs", rev = "3656e8aaa41cba15ec5d11b7c77045cb72dec163" }
+ecolor = { git = "https://github.com/storytold/egui.git", rev = "a87d00caaec947ea781657c6ff410c9838016d18" }
+emath = { git = "https://github.com/storytold/egui.git", rev = "a87d00caaec947ea781657c6ff410c9838016d18" }
+epaint = { git = "https://github.com/storytold/egui.git", rev = "a87d00caaec947ea781657c6ff410c9838016d18" }
+epaint_default_fonts = { git = "https://github.com/storytold/egui.git", rev = "a87d00caaec947ea781657c6ff410c9838016d18" }
+egui = { git = "https://github.com/storytold/egui.git", rev = "a87d00caaec947ea781657c6ff410c9838016d18" }
+egui-winit = { git = "https://github.com/storytold/egui.git", rev = "a87d00caaec947ea781657c6ff410c9838016d18" }
+egui-wgpu = { git = "https://github.com/storytold/egui.git", rev = "a87d00caaec947ea781657c6ff410c9838016d18" }
+egui_glow = { git = "https://github.com/storytold/egui.git", rev = "a87d00caaec947ea781657c6ff410c9838016d18" }
+egui_extras = { git = "https://github.com/storytold/egui.git", rev = "a87d00caaec947ea781657c6ff410c9838016d18" }
+egui_kittest = { git = "https://github.com/storytold/egui.git", rev = "a87d00caaec947ea781657c6ff410c9838016d18" }
+egui_system_font_provider = { git = "https://github.com/storytold/egui.git", rev = "a87d00caaec947ea781657c6ff410c9838016d18" }
+eframe = { git = "https://github.com/storytold/egui.git", rev = "a87d00caaec947ea781657c6ff410c9838016d18" }
+egui_demo_lib = { git = "https://github.com/storytold/egui.git", rev = "a87d00caaec947ea781657c6ff410c9838016d18" }
+egui_inspection = { git = "https://github.com/storytold/egui.git", rev = "a87d00caaec947ea781657c6ff410c9838016d18" }
 winit = { git = "https://github.com/storytold/winit.git", rev = "a517b3846ee8457d84ee4975110bfda6797c44dc" }
-
-
-# cdylib 必须可 unwind：插件 FFI 边界在插件内部捕获 panic，
-# 若 release profile 设成 abort，宿主会整体被杀。
 [profile.release]
 panic = "unwind"
 opt-level = 3

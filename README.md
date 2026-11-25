@@ -170,3 +170,7 @@ pwsh -File scripts/deploy-to-otools.ps1
 URL 参数沿用上游：`?cpu` 强制 CPU 画布路径、`?webgl` 强制 WebGL2 后端。
 
 详细约定见 [AGENTS.md](./AGENTS.md)。
+## 当前移植快照（2026-11-25）
+
+当前 `upstream.pin` 固定到 [`e22facf45b0e`](https://github.com/storytold/photocraft/commit/e22facf45b0e7f0fbeb3b439ed44a950da9783b4)。
+本次同步包含上游自 `3c7bcd47348a` 之后的更新；插件发布版本维持不变，发布时再记录发行版本。
